@@ -1,0 +1,109 @@
+import pandas as pd
+import numpy as np
+
+# Step 1: Load the Dementia Dataset
+def load_dementia_data(file_path):
+    """
+    Load the Dementia dataset from a CSV or Excel file.
+
+    Parameters:
+    - file_path (str): Path to the file.
+
+    Returns:
+    - DataFrame: Loaded dementia dataset.
+    """
+    try:
+        if file_path.endswith('.csv'):
+            dementia_data = pd.read_csv(file_path)
+        elif file_path.endswith('.xlsx'):
+            dementia_data = pd.read_excel(file_path, engine='openpyxl')
+        else:
+            raise ValueError("Unsupported file format. Please use .csv or .xlsx files.")
+        
+        print("Dementia dataset loaded successfully.")
+        return dementia_data
+    except FileNotFoundError:
+        print(f"File not found at {file_path}. Please check the path and try again.")
+        return None
+    except Exception as e:
+        print(f"An error occurred while loading the dataset: {e}")
+        return None
+
+# Step 2: Handle Missing Values
+def handle_missing_values(df):
+    """
+    Impute missing values in the dataset using mean for numerical columns
+    and mode for categorical columns.
+
+    Parameters:
+    - df (DataFrame): The dementia dataset.
+
+    Returns:
+    - DataFrame: Dataset with imputed missing values.
+    """
+    # Identify numerical and categorical columns
+    numerical_columns = df.select_dtypes(include=['float64', 'int64']).columns
+    categorical_columns = df.select_dtypes(include=['object']).columns
+
+    # Impute missing values for numerical columns with mean
+    for column in numerical_columns:
+        if df[column].isnull().sum() > 0:
+            mean_value = df[column].mean()
+            df[column].fillna(mean_value, inplace=True)
+            print(f"Filled missing values in '{column}' with mean value {mean_value:.4f}.")
+
+    # Impute missing values for categorical columns with mode
+    for column in categorical_columns:
+        if df[column].isnull().sum() > 0:
+            mode_value = df[column].mode()[0]
+            df[column].fillna(mode_value, inplace=True)
+            print(f"Filled missing values in '{column}' with mode value '{mode_value}'.")
+
+    print("\nMissing values after imputation:")
+    print(df.isnull().sum())
+    
+    return df
+
+# Step 3: Discretize Numerical Features
+def discretize_features(df, columns_to_discretize, bins=4, labels=None):
+    """
+    Discretize specified numerical features into equal-width bins.
+
+    Parameters:
+    - df (DataFrame): The dementia dataset.
+    - columns_to_discretize (list): List of column names to discretize.
+    - bins (int): Number of bins to divide each feature into.
+    - labels (list): Labels for the bins. If None, integer labels will be used.
+
+    Returns:
+    - DataFrame: Dataset with discretized features.
+    """
+    for column in columns_to_discretize:
+        if column in df.columns:
+            df[column + '_discrete'] = pd.cut(df[column], bins=bins, labels=labels)
+            print(f"Discretized '{column}' into {bins} bins with labels {labels}.")
+        else:
+            print(f"Column '{column}' not found in the dataset.")
+    
+    return df
+
+# Example Usage
+if __name__ == "__main__":
+    # Define the path to the Dementia dataset file
+    dementia_file_path = 'path/to/dementia_data.xlsx'  # <-- Update this path
+    
+    # Load data
+    dementia_data = load_dementia_data(dementia_file_path)
+    if dementia_data is None:
+        print("Loading dementia dataset failed.")
+    else:
+        # Handle missing values
+        dementia_data = handle_missing_values(dementia_data)
+        
+        # Discretize selected features
+        columns_to_discretize = ['Age', 'EDUC', 'MMSE', 'eTIV', 'nWBV', 'ASF']  # Columns to discretize
+        dementia_data = discretize_features(dementia_data, columns_to_discretize, bins=4, labels=['Low', 'Medium', 'High', 'Very High'])
+        
+        # Display first few rows of the processed dataset
+        print("\nProcessed Dementia Data:")
+        print(dementia_data.head())
