@@ -1,109 +1,46 @@
+ K-Fold Cross-Validation for 2 datastes
+
+
+from sklearn.model_selection import KFold, cross_val_score
+from sklearn.ensemble import RandomForestClassifier  # or any model of your choice
+from sklearn.metrics import accuracy_score
 import pandas as pd
-import numpy as np
 
-# Step 1: Load the Dementia Dataset
-def load_dementia_data(file_path):
-    """
-    Load the Dementia dataset from a CSV or Excel file.
+# Load your datasets
+# Assuming they are CSV files, you can replace 'dataset1.csv' and 'dataset2.csv' with the actual file names.
+dataset1 = pd.read_csv('path_to_dataset1.csv')
+dataset2 = pd.read_csv('path_to_dataset2.csv')
 
-    Parameters:
-    - file_path (str): Path to the file.
+# Define the features (X) and labels (y) for both datasets
+# Replace 'target' with the actual target column name
+X1, y1 = dataset1.drop(columns=['target']), dataset1['target']
+X2, y2 = dataset2.drop(columns=['target']), dataset2['target']
 
-    Returns:
-    - DataFrame: Loaded dementia dataset.
-    """
-    try:
-        if file_path.endswith('.csv'):
-            dementia_data = pd.read_csv(file_path)
-        elif file_path.endswith('.xlsx'):
-            dementia_data = pd.read_excel(file_path, engine='openpyxl')
-        else:
-            raise ValueError("Unsupported file format. Please use .csv or .xlsx files.")
+# Set up cross-validation parameters
+kf = KFold(n_splits=5, shuffle=True, random_state=42)
+model = RandomForestClassifier()  # Use any classifier of choice
+
+# Function to evaluate using cross-validation
+def evaluate_model(X, y):
+    scores = []
+    for train_index, test_index in kf.split(X):
+        X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+        y_train, y_test = y.iloc[train_index], y.iloc[test_index]
         
-        print("Dementia dataset loaded successfully.")
-        return dementia_data
-    except FileNotFoundError:
-        print(f"File not found at {file_path}. Please check the path and try again.")
-        return None
-    except Exception as e:
-        print(f"An error occurred while loading the dataset: {e}")
-        return None
-
-# Step 2: Handle Missing Values
-def handle_missing_values(df):
-    """
-    Impute missing values in the dataset using mean for numerical columns
-    and mode for categorical columns.
-
-    Parameters:
-    - df (DataFrame): The dementia dataset.
-
-    Returns:
-    - DataFrame: Dataset with imputed missing values.
-    """
-    # Identify numerical and categorical columns
-    numerical_columns = df.select_dtypes(include=['float64', 'int64']).columns
-    categorical_columns = df.select_dtypes(include=['object']).columns
-
-    # Impute missing values for numerical columns with mean
-    for column in numerical_columns:
-        if df[column].isnull().sum() > 0:
-            mean_value = df[column].mean()
-            df[column].fillna(mean_value, inplace=True)
-            print(f"Filled missing values in '{column}' with mean value {mean_value:.4f}.")
-
-    # Impute missing values for categorical columns with mode
-    for column in categorical_columns:
-        if df[column].isnull().sum() > 0:
-            mode_value = df[column].mode()[0]
-            df[column].fillna(mode_value, inplace=True)
-            print(f"Filled missing values in '{column}' with mode value '{mode_value}'.")
-
-    print("\nMissing values after imputation:")
-    print(df.isnull().sum())
-    
-    return df
-
-# Step 3: Discretize Numerical Features
-def discretize_features(df, columns_to_discretize, bins=4, labels=None):
-    """
-    Discretize specified numerical features into equal-width bins.
-
-    Parameters:
-    - df (DataFrame): The dementia dataset.
-    - columns_to_discretize (list): List of column names to discretize.
-    - bins (int): Number of bins to divide each feature into.
-    - labels (list): Labels for the bins. If None, integer labels will be used.
-
-    Returns:
-    - DataFrame: Dataset with discretized features.
-    """
-    for column in columns_to_discretize:
-        if column in df.columns:
-            df[column + '_discrete'] = pd.cut(df[column], bins=bins, labels=labels)
-            print(f"Discretized '{column}' into {bins} bins with labels {labels}.")
-        else:
-            print(f"Column '{column}' not found in the dataset.")
-    
-    return df
-
-# Example Usage
-if __name__ == "__main__":
-    # Define the path to the Dementia dataset file
-    dementia_file_path = 'path/to/dementia_data.xlsx'  # <-- Update this path
-    
-    # Load data
-    dementia_data = load_dementia_data(dementia_file_path)
-    if dementia_data is None:
-        print("Loading dementia dataset failed.")
-    else:
-        # Handle missing values
-        dementia_data = handle_missing_values(dementia_data)
+        # Train the model
+        model.fit(X_train, y_train)
         
-        # Discretize selected features
-        columns_to_discretize = ['Age', 'EDUC', 'MMSE', 'eTIV', 'nWBV', 'ASF']  # Columns to discretize
-        dementia_data = discretize_features(dementia_data, columns_to_discretize, bins=4, labels=['Low', 'Medium', 'High', 'Very High'])
-        
-        # Display first few rows of the processed dataset
-        print("\nProcessed Dementia Data:")
-        print(dementia_data.head())
+        # Predict and evaluate
+        y_pred = model.predict(X_test)
+        score = accuracy_score(y_test, y_pred)
+        scores.append(score)
+    
+    print(f'Average Accuracy: {sum(scores) / len(scores):.2f}')
+    return scores
+
+# Evaluate for each dataset
+print("Dataset 1:")
+scores1 = evaluate_model(X1, y1)
+
+print("\nDataset 2:")
+scores2 = evaluate_model(X2, y2)
