@@ -1,48 +1,62 @@
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import StratifiedKFold, cross_validate
 from sklearn.preprocessing import StandardScaler
 from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import classification_report
 
 # Load the dataset
-file_path = r'C:\Users\Student\Documents\Module Dev Containers\AAI-assignment\AAI-assignement-main\AAI-assignement-main\Datasets and old trials\parkinsons_data-VOICE-features.csv'
-data = pd.read_csv(file_path)
+file_path = r'C:\Users\Student\Desktop\AAI\Gaussian process\parkinsons_data-VOICE-features.csv'
+# Check if the file exists and load data
+try:
+    data = pd.read_csv(file_path)
+    print("Data loaded successfully!")
+except FileNotFoundError:
+    print(f"Error: The file at {file_path} was not found.")
+    exit()  # Exit if the file is not found
 
 # Drop unnecessary columns
-data = data.drop(columns=['name'])
+if 'name' in data.columns:
+    data = data.drop(columns=['name'])
+else:
+    print("Column 'name' not found in the data. Proceeding without dropping it.")
 
 # Define features and target variable
 X = data.drop(columns=['status'])
 y = data['status']
 
-# Split the dataset into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
 # Standardize the features
 scaler = StandardScaler()
-X_train = scaler.fit_transform(X_train)
-X_test = scaler.transform(X_test)
+X_scaled = scaler.fit_transform(X)
 
 # Define Gaussian Process kernel
-# Use a constant kernel multiplied by an RBF kernel (typical choice for GPs)
 kernel = C(1.0, (1e-3, 1e3)) * RBF(1, (1e-2, 1e2))
 
-# Initialize and fit Gaussian Process Classifier
+# Initialize the Gaussian Process Classifier
 gpc = GaussianProcessClassifier(kernel=kernel, random_state=42)
-gpc.fit(X_train, y_train)
 
-# Make predictions on the test set
-y_pred = gpc.predict(X_test)
+# 5-Fold Cross-validation with StratifiedKFold
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
-# Evaluate the model
-accuracy = accuracy_score(y_test, y_pred)
-report = classification_report(y_test, y_pred)
+# Perform cross-validation
+cv_results = cross_validate(gpc, X_scaled, y, cv=cv, scoring='accuracy', return_train_score=False)
 
-print(f"Accuracy: {accuracy:.2f}")
-print("Classification Report:")
-print(report)
+# Output the results of cross-validation
+print(f"Cross-validation Accuracy: {np.mean(cv_results['test_score']):.2f}")
+print(f"Cross-validation Standard Deviation: {np.std(cv_results['test_score']):.2f}")
+
+# After cross-validation, let's train on the entire dataset
+gpc.fit(X_scaled, y)
+
+# Classification report on full dataset
+y_pred = gpc.predict(X_scaled)
+print("Classification Report on full data (after training on entire dataset):")
+print(classification_report(y, y_pred))
+
+# Now, the query part:
+
+# Assume 'model' is the trained GaussianProcessClassifier and 'scaler' is the fitted StandardScaler.
 
 # Step 1: Define the input values for the query
 query_data = {
@@ -64,26 +78,27 @@ query_data = {
     'HNR': 26.775
 }
 
-# Step 2: Add missing features with placeholder values (e.g., 0 or NaN)
-all_features = X.columns.tolist()  # Get the list of all feature names from training data
-missing_features = set(all_features) - set(query_data.keys())
-
-# Add the missing features to the query data with default values (e.g., 0)
-for feature in missing_features:
-    query_data[feature] = 0  # Placeholder value (or use np.nan if you prefer)
-
-# Step 3: Convert the dictionary to a DataFrame and ensure it matches the feature columns in order
+# Step 2: Convert the dictionary to a DataFrame
 query_df = pd.DataFrame([query_data])
 
-# Step 4: Ensure the query DataFrame columns match the order in the training data
-query_df = query_df[all_features]
+# Step 3: Align query columns with the model's feature columns
+# Here we ensure that the query_df has the same columns as the training data X, 
+# including any missing columns with zero (or other placeholder value).
+missing_cols = set(X.columns) - set(query_df.columns)
 
-# Step 5: Apply the same scaling transformation
+# Add missing columns with default value (e.g., 0 or NaN)
+for col in missing_cols:
+    query_df[col] = 0  # Use 0 for missing values, or np.nan if you prefer
+
+# Reorder columns to match the training data feature order
+query_df = query_df[X.columns]
+
+# Step 4: Apply the same scaling transformation
 query_scaled = scaler.transform(query_df)
 
-# Step 6: Predict probability for status = 0 (no Parkinson's)
+# Step 5: Predict probability for status = 0 (no Parkinson's)
 probabilities = gpc.predict_proba(query_scaled)
 prob_status_0 = probabilities[0][0]  # Probability of status = 0 (no Parkinson's)
 
-# Output the result
+# Output the result for the query
 print("P(status=0 | given features) =", prob_status_0)
