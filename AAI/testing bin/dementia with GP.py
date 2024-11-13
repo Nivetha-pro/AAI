@@ -1,0 +1,77 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.gaussian_process import GaussianProcessClassifier
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+from sklearn.metrics import accuracy_score, roc_auc_score, log_loss
+import time
+
+# Load the dementia dataset with the correct file path
+file_path = r'C:\Users\Student\Desktop\AAI\Discrete Bayesian Networks\dementia_data-MRI-features.csv'
+data = pd.read_csv(file_path)
+
+# Drop unnecessary columns
+data = data.drop(columns=['Subject ID', 'MRI ID', 'MR Delay', 'Hand'])
+
+# Fill missing values in SES with mode and in MMSE with mean
+data['SES'].fillna(data['SES'].mode()[0], inplace=True)
+data['MMSE'].fillna(data['MMSE'].mean(), inplace=True)
+
+# Encode 'M/F' column (gender) into numerical values
+label_encoder = LabelEncoder()
+data['M/F'] = label_encoder.fit_transform(data['M/F'])  # 'M' -> 0, 'F' -> 1
+
+# Define features and target variable
+X = data.drop(columns=['Group'])  # Drop target column 'Group' (Demented, Nondemented, etc.)
+y = data['Group']  # Target is 'Group'
+
+# Standardize the features
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Define Gaussian Process model
+model = GaussianProcessClassifier(kernel=C(1.0, (1e-3, 1e3)) * RBF(1, (1e-2, 1e2)), random_state=42)
+
+# Function to evaluate the model
+def evaluate_model(model, X_train, y_train, X_test, y_test):
+    # Start training time
+    start_train_time = time.time()
+    model.fit(X_train, y_train)
+    train_time = time.time() - start_train_time
+
+    # Start testing time
+    start_test_time = time.time()
+    y_pred = model.predict(X_test)
+    y_pred_proba = model.predict_proba(X_test)  # Probabilities for all classes
+    test_time = time.time() - start_test_time
+
+    # Calculate essential metrics
+    accuracy = accuracy_score(y_test, y_pred)
+    
+    # AUC for multi-class (use 'ovr' for one-vs-rest strategy)
+    auc = roc_auc_score(y_test, y_pred_proba, multi_class='ovr', average='weighted')
+    
+    # Log Loss (cross-entropy loss)
+    logloss = log_loss(y_test, y_pred_proba)
+
+    return {
+        'accuracy': accuracy,
+        'AUC': auc,
+        'Log Loss': logloss,
+        'Train Time (s)': train_time,
+        'Test Time (s)': test_time
+    }
+
+# Split the data into training and testing sets (80% training, 20% testing)
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+
+# Evaluate the Gaussian Process model
+model_results = evaluate_model(model, X_train, y_train, X_test, y_test)
+
+# Display the results
+print("\nModel Evaluation Results:")
+for metric, value in model_results.items():
+    print(f"{metric}: {value:.4f}")
+
+    
