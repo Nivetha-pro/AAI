@@ -1,0 +1,151 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.gaussian_process import GaussianProcessClassifier
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+from sklearn.metrics import accuracy_score, roc_auc_score, log_loss
+import time
+
+# Load the dementia dataset with the correct file path
+file_path = r'C:\Users\Student\Desktop\AAI\Discrete Bayesian Networks\dementia_data-MRI-features.csv'
+data = pd.read_csv(file_path)
+
+# Drop unnecessary columns
+data = data.drop(columns=['Subject ID', 'MRI ID', 'MR Delay', 'Hand'])
+
+# Fill missing values in SES with mode and in MMSE with mean
+data['SES'] = data['SES'].fillna(data['SES'].mode()[0])  # Replace inplace with assignment
+data['MMSE'] = data['MMSE'].fillna(data['MMSE'].mean())  # Replace inplace with assignment
+
+# Encode 'M/F' column (gender) into numerical values
+label_encoder = LabelEncoder()
+data['M/F'] = label_encoder.fit_transform(data['M/F'])  # 'M' -> 0, 'F' -> 1
+
+# Define features and target variable
+X = data.drop(columns=['Group'])  # Drop target column 'Group' (Demented, Nondemented, etc.)
+y = data['Group']  # Target is 'Group'
+
+# Standardize the features
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Define Gaussian Process model
+model = GaussianProcessClassifier(kernel=C(1.0, (1e-3, 1e3)) * RBF(1, (1e-2, 1e2)), random_state=42)
+
+# Function to evaluate the model
+def evaluate_model(model, X_train, y_train, X_test, y_test):
+    # Start training time
+    start_train_time = time.time()
+    model.fit(X_train, y_train)
+    train_time = time.time() - start_train_time
+
+    # Start testing time
+    start_test_time = time.time()
+    y_pred = model.predict(X_test)
+    y_pred_proba = model.predict_proba(X_test)  # Probabilities for all classes
+    test_time = time.time() - start_test_time
+
+    # Calculate essential metrics
+    accuracy = accuracy_score(y_test, y_pred)
+    
+    # AUC for multi-class (use 'ovr' for one-vs-rest strategy)
+    auc = roc_auc_score(y_test, y_pred_proba, multi_class='ovr', average='weighted')
+    
+    # Log Loss (cross-entropy loss)
+    logloss = log_loss(y_test, y_pred_proba)
+
+    return {
+        'accuracy': accuracy,
+        'AUC': auc,
+        'Log Loss': logloss,
+        'Train Time (s)': train_time,
+        'Test Time (s)': test_time
+    }
+
+# Split the data into training and testing sets (80% training, 20% testing)
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+
+# Evaluate the Gaussian Process model
+model_results = evaluate_model(model, X_train, y_train, X_test, y_test)
+
+# Display the results
+print("\nModel Evaluation Results:")
+for metric, value in model_results.items():
+    print(f"{metric}: {value:.4f}")
+
+# Query 1 Data for prediction
+query_data_1 = {
+    'Age': [88],
+    'EDUC': [14],
+    'SES': [2],
+    'MMSE': [30],
+    'CDR': [0],
+    'eTIV': [2004],
+    'nWBV': [0.681],
+    'ASF': [0.876],
+    'M/F': [1],  # For example, assume 'F' (Female) is encoded as 1
+    'Visit': [2]  # The visit number as per your query
+}
+
+# Convert to DataFrame
+query_df_1 = pd.DataFrame(query_data_1)
+
+# Ensure the order of the columns matches the training set columns (same order as X)
+query_df_1 = query_df_1[X.columns]  # Reorder columns to match training data
+
+# Preprocess query data (same as training data)
+query_df_1['SES'] = query_df_1['SES'].fillna(data['SES'].mode()[0])  # Fill missing SES
+query_df_1['MMSE'] = query_df_1['MMSE'].fillna(data['MMSE'].mean())  # Fill missing MMSE
+
+# Standardize the query data using the same scaler as the training data
+query_scaled_1 = scaler.transform(query_df_1)
+
+# Predict using the trained model for Query 1
+prediction_1 = model.predict(query_scaled_1)
+prediction_proba_1 = model.predict_proba(query_scaled_1)
+
+# Display the prediction result for Query 1 with four decimal places
+print("\nQuery 1 Prediction Results:")
+print(f"Predicted class: {prediction_1[0]}")
+print("Prediction probabilities:", [f"{prob:.4f}" for prob in prediction_proba_1[0]])
+
+# Query 2 Data for prediction
+query_data_2 = {
+    'Age': [80],
+    'EDUC': [12],
+    'SES': [2],
+    'MMSE': [22],
+    'CDR': [0.5],
+    'eTIV': [1698],
+    'nWBV': [0.701],
+    'ASF': [1.034],
+    'M/F': [1],  # For example, assume 'F' (Female) is encoded as 1
+    'Visit': [3]  # The visit number as per your query
+}
+
+# Convert to DataFrame
+query_df_2 = pd.DataFrame(query_data_2)
+
+# Ensure the order of the columns matches the training set columns (same order as X)
+query_df_2 = query_df_2[X.columns]  # Reorder columns to match training data
+
+# Preprocess query data (same as training data)
+query_df_2['SES'] = query_df_2['SES'].fillna(data['SES'].mode()[0])  # Fill missing SES
+query_df_2['MMSE'] = query_df_2['MMSE'].fillna(data['MMSE'].mean())  # Fill missing MMSE
+
+# Standardize the query data using the same scaler as the training data
+query_scaled_2 = scaler.transform(query_df_2)
+
+# Predict using the trained model for Query 2
+prediction_2 = model.predict(query_scaled_2)
+prediction_proba_2 = model.predict_proba(query_scaled_2)
+
+# Display the prediction result for Query 2 with four decimal places
+print("\nQuery 2 Prediction Results:")
+print(f"Predicted class: {prediction_2[0]}")
+print("Prediction probabilities:", [f"{prob:.4f}" for prob in prediction_proba_2[0]])
+
+
+
+
