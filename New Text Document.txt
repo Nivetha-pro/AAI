@@ -1,104 +1,205 @@
-import pandas as pd
-import numpy as np
-from sklearn.model_selection import StratifiedKFold, cross_validate
-from sklearn.preprocessing import StandardScaler
-from sklearn.gaussian_process import GaussianProcessClassifier
-from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
-from sklearn.metrics import classification_report
+**Medical Diagnosis in Dementia and Parkinson’s Datasets using Gaussian Processes**  
+  
+**Nivetha Sakthivel**  
+MSc Robotics And Autonomous Systems  
+University of Lincoln  
+Lincoln, United Kingdom  
+27415717@students.lincoln.ac.uk  
+  
+---  
+  
+### **Abstract**  
+This study examines Gaussian Processes for predicting outcomes in Dementia and Parkinson's datasets. The model performance is evaluated based on predictive power (disease classification accuracy), Area Under the Curve (AUC), statistical distance, and training/testing times.  
+  
+**Keywords** — Gaussian Processes, Model Performance, Predictive Power, Area Under the Curve (AUC), Statistical Distance, Training and Testing Times.  
+  
+---  
+  
+## **I. INTRODUCTION**  
+Gaussian Processes (GPs) are a powerful probabilistic model used for regression, classification, and predictive tasks. They model complex, non-linear relationships and provide probabilistic predictions. This study implements Gaussian Process Classifiers (GPC) with Radial Basis Function (RBF) kernels on dementia and Parkinson’s datasets. The goal is to evaluate GPC performance across probabilistic metrics and analyze kernel influence on model parameters.  
+  
+---  
+  
+## **II. DATASET PRE-PROCESSING AND DESCRIPTION**  
+### **A. Dementia Dataset**  
+- Missing values in SES and MMSE were imputed using mode and mean, respectively.  
+- Gender and class labels were encoded (M/F and Group).  
+- Feature scaling was applied for model compatibility.  
+  
+### **B. Parkinson’s Dataset**  
+- Dataset converted from XLSX to CSV.  
+- Feature selection and standardization were applied to retain relevant columns.  
+  
+---  
+  
+## **III. GAUSSIAN PROCESS CLASSIFIER (GPC)**  
+### **A. Definition**  
+GPC is a machine learning model used for classification tasks, particularly effective in medical diagnosis due to its ability to quantify uncertainty in predictions.  
+  
+### **B. Radial Basis Function (RBF) Kernel**  
+- Enables flexible decision boundaries.  
+- Handles non-linear relationships effectively.  
+- Provides probabilistic class predictions with uncertainty measures.  
+  
+### **C. K-Fold Cross-Validation (K=5)**  
+- The dataset was split into 5 folds (20% per fold).  
+- Training and testing occurred over 5 iterations.  
+- This approach ensured a reliable model evaluation.  
+  
+---  
+  
+## **IV. COMPARATIVE ANALYSIS**  
+### **A. Continuous vs Discrete Methods**  
+- Discrete methods oversimplified complex datasets and struggled with continuous features.  
+- Continuous models (GP) excelled in handling clinical metrics and provided better decision boundaries.  
+  
+### **B. Bayesian Networks in Medical Diagnosis**  
+- **Score-Based Algorithms** (e.g., Hill Climbing) outperformed other approaches in flexible structure learning.  
+- **Constraint-Based and Hybrid Approaches** were less effective in handling continuous data.  
+  
+### **C. Implementation Comparisons**  
+- **Scikit-Learn**: Effective for small datasets, high flexibility.  
+- **GPy**: Better performance for large continuous datasets due to automatic differentiation.  
+  
+### **D. Kernel Influence on GPC**  
+- The RBF kernel effectively handled complex, non-linear relationships.  
+- Provided an advantage over discrete classification methods.  
+  
+---  
+  
+## **V. METHODOLOGY**  
+### **A. Implementation**  
+- Libraries: Pandas, NumPy (data handling), Scikit-learn (modeling), GPy (Gaussian Process optimization).  
+  
+### **B. Dementia Dataset Evaluation**  
+- **Testing Inputs:** Query samples for classification.  
+- **Expected Output:** Class predictions with probability scores.  
+- **Metrics Evaluated:** Accuracy, AUC, training/testing times.  
+  
+### **C. Parkinson’s Dataset Evaluation**  
+- Similar procedure as Dementia dataset.  
+  
+---  
+  
+## **VI. CONCLUSION**  
+This study demonstrates the effectiveness of Gaussian Process Classifiers (GPC) in diagnosing Dementia and Parkinson’s disease. The results show that continuous models significantly outperform discrete models in classification accuracy and flexibility. The use of the RBF kernel enhances the model’s ability to capture complex, non-linear patterns, making it a powerful tool for medical diagnosis. Additionally, the comparative analysis between Scikit-learn and GPy highlights their respective advantages, with Scikit-learn excelling in small-scale applications and GPy offering superior performance on large datasets. 
 
-# Load the dataset
-file_path = r'C:\Users\Student\Desktop\AAI\Gaussian process\parkinsons_data-VOICE-features.csv'
-# Check if the file exists and load data
-try:
-    data = pd.read_csv(file_path)
-    print("Data loaded successfully!")
-except FileNotFoundError:
-    print(f"Error: The file at {file_path} was not found.")
-    exit()  # Exit if the file is not found
+K-fold cross-validation was instrumental in ensuring a robust evaluation, reducing overfitting, and improving generalization. The ability of GPC to quantify prediction uncertainty is crucial in medical applications where confidence in diagnosis is as important as accuracy. 
 
-# Drop unnecessary columns
-if 'name' in data.columns:
-    data = data.drop(columns=['name'])
-else:
-    print("Column 'name' not found in the data. Proceeding without dropping it.")
+### **Future Work**  
+- Investigate alternative kernel functions such as Matérn or Periodic kernels for improved performance.  
+- Apply deep learning-based probabilistic models to enhance classification accuracy.  
+- Expand dataset size to improve model generalization and robustness.  
+  
+---  
+  
+## **REFERENCES**  
+1. [Parkinson's Disease Dataset - Kaggle](https://www.kaggle.com/datasets/vikasukani/parkinsons-disease-data-set?select=parkinsons.data)  
+2. [Dementia Prediction Dataset - Kaggle](https://www.kaggle.com/datasets/shashwatwork/dementia-prediction-dataset?resource=download)  
+3. N. A’ayunnisa, Y. Salim, and H. Azis, "Analisis performa metode Gaussian Naïve Bayes untuk klasifikasi citra tulisan tangan karakter arab," J. Data Sci., 2022.  
+4. [Springer Article on Gaussian Processes](https://link.springer.com/article/10.1007/s13534-021-00196-7)  
+5. N. Rismayanti et al., "Evaluating Thresholding-Based Segmentation and Humoment Feature Extraction in Acute Lymphoblastic Leukemia Classification using Gaussian Naive Bayes," Int. J. Artif. Intell. Med. Issues, vol. 1, no. 2, 2023.  
+  
+---
 
-# Define features and target variable
-X = data.drop(columns=['status'])
-y = data['status']
+### **2-Minute Explanation of the Report**  
 
-# Standardize the features
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
+This study focuses on using **Gaussian Process Classifiers (GPC)** to diagnose **Dementia and Parkinson’s disease** using medical datasets. The goal is to analyze **model performance** in terms of **classification accuracy, AUC, statistical distance, and training/testing times**.  
 
-# Define Gaussian Process kernel
-kernel = C(1.0, (1e-3, 1e3)) * RBF(1, (1e-2, 1e2))
+The **datasets** were pre-processed:  
+- Missing values were handled in the **Dementia dataset**, while the **Parkinson’s dataset** was standardized.  
+- **Feature encoding and scaling** were applied for model compatibility.  
 
-# Initialize the Gaussian Process Classifier
-gpc = GaussianProcessClassifier(kernel=kernel, random_state=42)
+The **Gaussian Process Classifier (GPC)** was chosen for its ability to handle **complex, non-linear relationships** and provide **uncertainty estimates**. The **Radial Basis Function (RBF) kernel** was used for flexible decision boundaries.  
 
-# 5-Fold Cross-validation with StratifiedKFold
-cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+A **5-fold cross-validation** approach ensured model robustness by splitting data into **five equal parts** for training and testing.  
 
-# Perform cross-validation
-cv_results = cross_validate(gpc, X_scaled, y, cv=cv, scoring='accuracy', return_train_score=False)
+### **Comparative Analysis Findings**  
+1. **Continuous models** outperformed discrete models in handling clinical metrics.  
+2. **Bayesian networks** were explored, and **score-based algorithms** proved more effective in structure learning.  
+3. **Model implementations**:  
+   - **Scikit-learn** was ideal for small datasets.  
+   - **GPy** performed better on larger datasets due to automatic differentiation.  
+4. The **RBF kernel** improved classification accuracy and flexibility in handling medical data.  
 
-# Output the results of cross-validation
-print(f"Cross-validation Accuracy: {np.mean(cv_results['test_score']):.2f}")
-print(f"Cross-validation Standard Deviation: {np.std(cv_results['test_score']):.2f}")
+### **Conclusion & Future Work**  
+The study found **Gaussian Process Classifiers** to be **effective and reliable** for medical diagnosis, offering **higher accuracy and flexibility** compared to discrete models. **K-fold cross-validation** improved generalization, and **uncertainty quantification** made predictions more trustworthy for medical applications.  
 
-# After cross-validation, let's train on the entire dataset
-gpc.fit(X_scaled, y)
+For future improvements, alternative **kernel functions**, **deep learning models**, and **larger datasets** could be explored to further enhance classification performance. 🚀
 
-# Classification report on full dataset
-y_pred = gpc.predict(X_scaled)
-print("Classification Report on full data (after training on entire dataset):")
-print(classification_report(y, y_pred))
 
-# Now, the query part:
+### **Detailed Explanation of the Methodology**  
 
-# Assume 'model' is the trained GaussianProcessClassifier and 'scaler' is the fitted StandardScaler.
+The methodology section outlines the step-by-step approach used in this study to apply **Gaussian Process Classifiers (GPC)** for diagnosing **Dementia** and **Parkinson’s disease**. It covers **data preprocessing, model implementation, training, evaluation, and comparison techniques**.  
 
-# Step 1: Define the input values for the query
-query_data = {
-    'MDVP:Fo(Hz)': 197.076,
-    'MDVP:Fhi(Hz)': 206.896,
-    'MDVP:Flo(Hz)': 192.055,
-    'MDVP:Jitter(%)': 0.00289,
-    'MDVP:Jitter(Abs)': 0.00001,
-    'MDVP:RAP': 0.00166,
-    'MDVP:PPQ': 0.00168,
-    'Jitter:DDP': 0.00498,
-    'MDVP:Shimmer': 0.01098,
-    'MDVP:Shimmer(dB)': 0.097,
-    'Shimmer:APQ3': 0.00563,
-    'Shimmer:APQ5': 0.0068,
-    'MDVP:APQ': 0.00802,
-    'Shimmer:DDA': 0.01689,
-    'NHR': 0.00339,
-    'HNR': 26.775
-}
+---
 
-# Step 2: Convert the dictionary to a DataFrame
-query_df = pd.DataFrame([query_data])
+### **A. Implementation**  
+#### **1. Programming Environment & Tools**  
+- **Python Environment**: Jupyter Notebook & VS Code  
+- **Libraries Used**:  
+  - **Data Handling**: Pandas, NumPy  
+  - **Machine Learning**: Scikit-learn (for GPC implementation), GPy (for advanced GP modeling)  
+  - **Data Visualization**: Matplotlib, Seaborn  
 
-# Step 3: Align query columns with the model's feature columns
-# Here we ensure that the query_df has the same columns as the training data X, 
-# including any missing columns with zero (or other placeholder value).
-missing_cols = set(X.columns) - set(query_df.columns)
+#### **2. Data Preprocessing**  
+Before applying the GPC model, the raw datasets were **cleaned and prepared**:  
+- **Dementia Dataset**:  
+  - Missing values in **SES** and **MMSE** were imputed using **mode and mean**, respectively.  
+  - **Categorical variables** (Gender, Group) were **encoded** into numerical values.  
+  - **Feature scaling** was performed using **standardization** for compatibility with Gaussian Processes.  
+- **Parkinson’s Dataset**:  
+  - The dataset was converted from **XLSX to CSV** format for ease of processing.  
+  - **Feature selection** was applied to retain only **relevant columns**.  
+  - **Standardization** was applied to ensure features had the same scale.  
 
-# Add missing columns with default value (e.g., 0 or NaN)
-for col in missing_cols:
-    query_df[col] = 0  # Use 0 for missing values, or np.nan if you prefer
+---
 
-# Reorder columns to match the training data feature order
-query_df = query_df[X.columns]
+### **B. Model Training and Evaluation**  
 
-# Step 4: Apply the same scaling transformation
-query_scaled = scaler.transform(query_df)
+#### **1. Data Splitting with K-Fold Cross-Validation (K=5)**  
+- The dataset was split into **five equal folds**, ensuring that each fold contained **20% of the total data**.  
+- Training and testing were performed **5 times**, each time using a different fold for testing.  
+- **Why K=5?**  
+  - **Computational balance**: A trade-off between training time and accuracy estimation.  
+  - **Better performance estimation**: Reduces overfitting risk and ensures a **reliable accuracy score**.  
 
-# Step 5: Predict probability for status = 0 (no Parkinson's)
-probabilities = gpc.predict_proba(query_scaled)
-prob_status_0 = probabilities[0][0]  # Probability of status = 0 (no Parkinson's)
+#### **2. Model Implementation**  
+- **Gaussian Process Classifier (GPC) with Radial Basis Function (RBF) Kernel**:  
+  - **Why RBF Kernel?**  
+    - Adapts well to **non-linear relationships** in medical data.  
+    - Provides **smooth decision boundaries**.  
+    - Ensures **probabilistic predictions with uncertainty estimation**.  
+  - Implemented using **Scikit-learn's GPC** and **GPy for comparison**.  
 
-# Output the result for the query
-print("P(status=0 | given features) =", prob_status_0)
+#### **3. Hyperparameter Tuning**  
+- The **kernel parameters** were optimized to improve classification performance.  
+- **Key hyperparameters adjusted**:  
+  - **Length scale** (controls smoothness of decision boundaries).  
+  - **Noise variance** (controls model sensitivity to data noise).  
+
+#### **4. Performance Evaluation Metrics**  
+The models were assessed using several key metrics:  
+- **Predictive Accuracy**: Measures **correct classifications**.  
+- **Area Under the Curve (AUC-ROC)**: Evaluates the **model’s ability to distinguish between classes**.  
+- **Statistical Distance**: Determines how well the model fits the data.  
+- **Training & Testing Time**: Assesses computational efficiency.  
+
+#### **5. Model Comparisons**  
+- **Scikit-learn’s GPC** vs. **GPy**:  
+  - **Scikit-learn**: More flexible, easier to use, and effective for **small datasets**.  
+  - **GPy**: More powerful for **large-scale, continuous datasets** with built-in optimization.  
+
+---
+
+### **Summary of Methodology Approach**  
+1. **Preprocess data**: Handle missing values, encode categorical variables, apply feature scaling.  
+2. **Implement Gaussian Process Classifier (GPC) with RBF kernel**.  
+3. **Train models using 5-fold cross-validation** for robust accuracy estimation.  
+4. **Optimize hyperparameters** to fine-tune model performance.  
+5. **Evaluate models based on accuracy, AUC, statistical distance, and runtime**.  
+6. **Compare different implementations (Scikit-learn vs. GPy)** for performance insights.  
+
+---
+
+This methodology ensures a **rigorous, data-driven approach** to evaluating **Gaussian Processes in medical diagnosis**, making it a valuable tool for predicting Dementia and Parkinson’s diseases. 🚀
